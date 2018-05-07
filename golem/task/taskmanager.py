@@ -321,17 +321,14 @@ class TaskManager(TaskEventListener):
         if task.header.max_price < price:
             return None, False, False
 
-        def needs_computation():
-            ids = f'provider: {node_name} - {node_id}, task_id: {task_id}'
-            if self.tasks_states[task_id].status not in self.activeStatus:
-                logger.info(f'task is not active; {ids}')
-                return False
-            if not task.needs_computation():
-                logger.info(f'no more computation needed; {ids}')
-                return False
-            return True
+        def ids():
+            return f'provider: {node_name} - {node_id}, task_id: {task_id}'
 
-        if not needs_computation():
+        if self.tasks_states[task_id].status not in self.activeStatus:
+            logger.info(f'task is not active; {ids()}')
+            return None, False, False
+        if not task.needs_computation():
+            logger.info(f'no more computation needed; {ids()}')
             return None, False, False
 
         extra_data = task.query_extra_data(

@@ -247,6 +247,36 @@ class TestTaskManager(LogTestCase, TestDirFixtureWithReactor,
         checker([("xyz", None, TaskOp.WORK_OFFER_RECEIVED)])
         del handler
 
+    def test_get_next_subtask_for_not_active_task(self, *_):
+        task = self._get_task_mock()
+        task_id = task.header.task_id
+        self.tm.add_new_task(task)
+
+        with self.assertLogs(logger, level="INFO") as log:
+            subtask, wrong_task, wait = self.tm.get_next_subtask(
+                "ni", "nn", task_id, 0, 0, 0, 0)
+            assert subtask is None
+            assert not wrong_task
+            self.assertEqual(log.output, [
+                f'INFO:{logger.name}:task is not active; '
+                f'provider: nn - ni, task_id: {task_id}'])
+
+    @patch('golem.task.taskbase.Task.needs_computation', return_value=False)
+    def test_get_next_subtask_need_no_computation(self, *_):
+        task = self._get_task_mock()
+        task_id = task.header.task_id
+        self.tm.add_new_task(task)
+        self.tm.start_task(task_id)
+
+        with self.assertLogs(logger, level="INFO") as log:
+            subtask, wrong_task, wait = self.tm.get_next_subtask(
+                "ni", "nn", task_id, 0, 0, 0, 0)
+            assert subtask is None
+            assert not wrong_task
+            self.assertEqual(log.output, [
+                f'INFO:{logger.name}:no more computation needed; '
+                f'provider: nn - ni, task_id: {task_id}'])
+
     @patch('golem.task.taskbase.Task.needs_computation', return_value=True)
     def test_get_next_subtask(self, *_):
         assert isinstance(self.tm, TaskManager)

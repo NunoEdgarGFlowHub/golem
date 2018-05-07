@@ -587,10 +587,11 @@ class TaskServer(
             max_memory_size,
             num_cores):
 
-        ids = f'provider_id: {node_id}, task_id: {task_id}'
+        def ids():
+            return f'provider_id: {node_id}, task_id: {task_id}'
 
         if task_id not in self.task_manager.tasks:
-            logger.info(f'Cannot find task in my tasks: {ids}')
+            logger.info(f'Cannot find task in my tasks: {ids()}')
             return False
 
         task = self.task_manager.tasks[task_id]
@@ -599,26 +600,26 @@ class TaskServer(
 
         if requestor_perf > int(provider_perf) * int(num_cores):
             logger.info(f'insufficient provider performance: {provider_perf}'
-                        f' * {num_cores} < {requestor_perf}; {ids}')
+                        f' * {num_cores} < {requestor_perf}; {ids()}')
             return False
 
         if task.header.resource_size > (int(max_resource_size) * 1024):
             logger.info('insufficient provider disk size: '
-                        f'{max_resource_size} KiB; {ids}')
+                        f'{max_resource_size} KiB; {ids()}')
             return False
 
         if task.header.estimated_memory > (int(max_memory_size) * 1024):
             logger.info('insufficient provider memory size: '
-                        f'{max_memory_size} KiB; {ids}')
+                        f'{max_memory_size} KiB; {ids()}')
             return False
 
         if not self.acl.is_allowed(node_id):
-            logger.info(f'node not allowed; {ids}')
+            logger.info(f'node not allowed; {ids()}')
             return False
 
         trust = self.get_computing_trust(node_id)
         if trust < self.config_desc.computing_trust:
-            logger.info(f'insufficient provider trust level: {trust}; {ids}')
+            logger.info(f'insufficient provider trust level: {trust}; {ids()}')
             return False
 
         return True
