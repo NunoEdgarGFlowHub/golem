@@ -105,6 +105,20 @@ def _configure_mock_payment_processor(pp):
     pp._gnt_available.return_value = 3000 * denoms.ether
 
 
+class DummyEnvironment(Environment):
+    @classmethod
+    def get_id(cls):
+        return DummyTask.ENVIRONMENT_NAME
+
+    def __init__(self):
+        super(DummyEnvironment, self).__init__()
+        self.allow_custom_main_program_file = True
+
+    @staticmethod
+    def get_performance():
+        return 0
+
+
 def run_requesting_node(datadir, num_subtasks=3):
     client = None
 
@@ -139,6 +153,8 @@ def run_requesting_node(datadir, num_subtasks=3):
     port = client.p2pservice.cur_port
     requestor_addr = "{}:{}".format(client.node.prv_addr, port)
     report("Listening on {}".format(requestor_addr))
+
+    client.environments_manager.add_environment(DummyEnvironment())
 
     def report_status():
         while True:
@@ -182,15 +198,6 @@ def run_computing_node(datadir, peer_address, fail_after=None):
     client.start()
     client.task_server.task_computer.support_direct_computation = True
     report("Started in {:.1f} s".format(time.time() - start_time))
-
-    class DummyEnvironment(Environment):
-        @classmethod
-        def get_id(cls):
-            return DummyTask.ENVIRONMENT_NAME
-
-        def __init__(self):
-            super(DummyEnvironment, self).__init__()
-            self.allow_custom_main_program_file = True
 
     dummy_env = DummyEnvironment()
     dummy_env.accept_tasks = True
